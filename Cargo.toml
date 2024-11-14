@@ -1,6 +1,6 @@
 [package]
 name = "bizerror"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Jasper 张汉杰 <58722459+VainJoker@users.noreply.github.com>"]
 readme = "README.md"
