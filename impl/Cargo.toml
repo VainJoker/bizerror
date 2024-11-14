@@ -1,0 +1,20 @@
+[package]
+name = "bizerror-impl"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jasper 张汉杰 <58722459+VainJoker@users.noreply.github.com>"]
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+exclude = [".github", "CHANGELOG.md"]
+repository = "https://github.com/vainjoker/bizerror"
+homepage = "https://github.com/vainjoker/bizerror"
+description = "Provides a standardized approach for defining and managing business-related errors"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.74"
+quote = "1.0.35"
+syn = "2.0.87"
+darling = "0.20.10"

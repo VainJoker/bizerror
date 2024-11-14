@@ -11,8 +11,10 @@ homepage = "https://github.com/vainjoker/bizerror"
 description = "Provides a standardized approach for defining and managing business-related errors"
 
 [dependencies]
+bizerror-impl = { path = "impl" }
 
 [dev-dependencies]
+thiserror = "2" 
 
 [lints.rust]
 unsafe_code = "forbid"
