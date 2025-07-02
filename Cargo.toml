@@ -12,6 +12,7 @@ description = "Provides a standardized approach for defining and managing busine
 
 [dependencies]
 bizerror-impl = { path = "impl" }
+thiserror = "2"
 
 [dev-dependencies]
 thiserror = "2" 

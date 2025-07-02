@@ -1,41 +1,35 @@
-﻿use bizerror::BizError;
+use bizerror::bizerror;
 
-#[derive(BizError, thiserror::Error, Debug)]
-pub enum ApiError {
+#[bizerror]
+pub enum IdealApiError {
     #[bizerror(2001, "FromUtf8Error Error")]
-    #[error("FromUtf8Error Error")]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
     #[bizerror(2002, "InvalidEmail Error {email}")]
-    #[error("InvalidEmail Error {email}")]
     InvalidEmail { email: String },
 }
 
-/// 测试多个错误使用同一错误码
-#[derive(BizError, thiserror::Error, Debug)]
-pub enum ValidationError {
+/// 测试理想体验的多个错误使用同一错误码
+#[bizerror]
+pub enum IdealValidationError {
     // 这些错误都使用同一个错误码 4001，表示"输入验证失败"
     #[bizerror(4001, "Invalid email format: {email}")]
-    #[error("Invalid email format: {email}")]
     InvalidEmail { email: String },
     
     #[bizerror(4001, "Invalid phone number: {phone}")]
-    #[error("Invalid phone number: {phone}")]
     InvalidPhone { phone: String },
     
     #[bizerror(4001, "Invalid password: too short")]
-    #[error("Invalid password: too short")]
     PasswordTooShort,
     
     // 不同类别的验证错误使用不同错误码
     #[bizerror(4002, "Required field missing: {field}")]
-    #[error("Required field missing: {field}")]
     MissingField { field: String },
 }
 
 #[test]
-fn it_should_be_like() {
+fn test_ideal_from_utf8_error() {
     #[allow(clippy::unwrap_used)]
-    let res = from_utf8_error().unwrap_err();
+    let res = ideal_from_utf8_error().unwrap_err();
     println!("{res}");
     println!("Debug: {res:?}");
     
@@ -43,15 +37,15 @@ fn it_should_be_like() {
     assert_eq!(res.code(), 2001);
 }
 
-fn from_utf8_error() -> Result<String, ApiError> {
+fn ideal_from_utf8_error() -> Result<String, IdealApiError> {
     let bytes = vec![0, 159];
     let s = String::from_utf8(bytes)?; // 自动转换
     Ok(s)
 }
 
 #[test]
-fn test_invalid_email() {
-    let error = ApiError::InvalidEmail { 
+fn test_ideal_invalid_email() {
+    let error = IdealApiError::InvalidEmail { 
         email: "invalid-email".to_string() 
     };
     
@@ -66,16 +60,16 @@ fn test_invalid_email() {
 }
 
 #[test]
-fn test_same_error_code_different_errors() {
+fn test_ideal_same_error_code_different_errors() {
     // 创建多个使用相同错误码的错误
-    let email_error = ValidationError::InvalidEmail { 
+    let email_error = IdealValidationError::InvalidEmail { 
         email: "not-an-email".to_string() 
     };
-    let phone_error = ValidationError::InvalidPhone { 
+    let phone_error = IdealValidationError::InvalidPhone { 
         phone: "123".to_string() 
     };
-    let password_error = ValidationError::PasswordTooShort;
-    let missing_field_error = ValidationError::MissingField { 
+    let password_error = IdealValidationError::PasswordTooShort;
+    let missing_field_error = IdealValidationError::MissingField { 
         field: "username".to_string() 
     };
     
@@ -86,7 +80,7 @@ fn test_same_error_code_different_errors() {
     assert_eq!(missing_field_error.code(), 4002); // 不同的错误码
     
     // 验证消息内容不同
-    println!("=== 相同错误码(4001)的不同错误 ===");
+    println!("=== 理想体验：相同错误码(4001)的不同错误 ===");
     println!("Email Error: {}", email_error);
     println!("Phone Error: {}", phone_error);
     println!("Password Error: {}", password_error);
@@ -100,15 +94,15 @@ fn test_same_error_code_different_errors() {
 }
 
 #[test]
-fn test_error_code_grouping_use_case() {
-    println!("=== 业务场景：错误码分组 ===");
+fn test_ideal_error_code_grouping_use_case() {
+    println!("=== 理想体验业务场景：错误码分组 ===");
     
     // 模拟用户注册表单验证
     let validation_errors = vec![
-        ValidationError::InvalidEmail { email: "bad-email".to_string() },
-        ValidationError::InvalidPhone { phone: "123".to_string() },
-        ValidationError::PasswordTooShort,
-        ValidationError::MissingField { field: "username".to_string() },
+        IdealValidationError::InvalidEmail { email: "bad-email".to_string() },
+        IdealValidationError::InvalidPhone { phone: "123".to_string() },
+        IdealValidationError::PasswordTooShort,
+        IdealValidationError::MissingField { field: "username".to_string() },
     ];
     
     // 按错误码分组统计
@@ -125,4 +119,4 @@ fn test_error_code_grouping_use_case() {
     // 验证分组结果
     assert_eq!(validation_errors.iter().filter(|e| e.code() == 4001).count(), 3);
     assert_eq!(validation_errors.iter().filter(|e| e.code() == 4002).count(), 1);
-}
+} 
