@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.1](https://github.com/vainjoker/bizerror/compare/v0.1.0..v0.1.1) - 2025-07-03
 
 ### ✨ Features
 
@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🪶 Miscellaneous Tasks
 
+- Remove thiserror as dependency - ([ba25684](https://github.com/vainjoker/bizerror/commit/ba25684274503a6f8f6cf6179ea0fecf7ec6f494))
 - Release v0.1.1 - ([06ff49f](https://github.com/vainjoker/bizerror/commit/06ff49f73ed23e6780131bd86c30cf3e80e8a4d2))
 
 ### 📦️ Build

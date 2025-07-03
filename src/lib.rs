@@ -88,8 +88,16 @@ pub use bizerror_impl::BizError;
 /// - `name()`: Returns the error type name (typically the enum variant name)
 /// - `msg()`: Returns the error message using the Display implementation
 pub trait BizError: Error + Send + Sync + 'static {
+    /// The type of the error code
+    type CodeType: Copy
+        + std::fmt::Display
+        + std::fmt::Debug
+        + Send
+        + Sync
+        + 'static;
+
     /// Get the business error code
-    fn code(&self) -> u16;
+    fn code(&self) -> Self::CodeType;
 
     /// Get the error type name
     fn name(&self) -> &str;
@@ -151,7 +159,9 @@ impl<E: BizError> Error for ContextualError<E> {
 }
 
 impl<E: BizError> BizError for ContextualError<E> {
-    fn code(&self) -> u16 {
+    type CodeType = E::CodeType;
+
+    fn code(&self) -> Self::CodeType {
         self.error.code()
     }
 
