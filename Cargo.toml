@@ -1,7 +1,7 @@
 [package]
 name = "bizerror"
 version = "0.1.1"
-edition = "2021"
+edition = "2024"
 authors = ["Jasper Zhang <hanjie.zhang1228@gmail.com>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,7 @@ homepage = "https://github.com/vainjoker/bizerror"
 description = "Provides a standardized approach for defining and managing business-related errors"
 
 [dependencies]
-bizerror-impl = { path = "impl" }
+bizerror-impl = { version = "0.1", path = "impl" }
 thiserror = "2"
 
 [dev-dependencies] 

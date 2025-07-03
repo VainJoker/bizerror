@@ -1,7 +1,7 @@
 [package]
 name = "bizerror-impl"
-version = "0.1.0"
-edition = "2021"
+version = "0.1.1"
+edition = "2024"
 authors = ["Jasper Zhang <hanjie.zhang1228@gmail.com>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
