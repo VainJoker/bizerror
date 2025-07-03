@@ -2,7 +2,7 @@
 name = "bizerror-impl"
 version = "0.1.0"
 edition = "2021"
-authors = ["Jasper 张汉杰 <58722459+VainJoker@users.noreply.github.com>"]
+authors = ["Jasper Zhang <hanjie.zhang1228@gmail.com>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 exclude = [".github", "CHANGELOG.md"]
