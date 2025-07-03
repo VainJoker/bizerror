@@ -79,8 +79,6 @@ use std::error::Error;
 
 // Re-export the BizError derive macro
 pub use bizerror_impl::BizError;
-// Re-export thiserror for convenience
-pub use thiserror;
 
 /// Core business error trait
 ///

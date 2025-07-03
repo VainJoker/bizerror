@@ -12,9 +12,9 @@ description = "Provides a standardized approach for defining and managing busine
 
 [dependencies]
 bizerror-impl = { version = "0.1", path = "impl" }
-thiserror = "2"
 
 [dev-dependencies] 
+thiserror = "2"
 
 [lints.rust]
 unsafe_code = "forbid"
