@@ -8,9 +8,18 @@ use syn::{
     Error,
     Fields,
     Ident,
+    LitInt,
+    LitStr,
     Meta,
     Result,
+    Token,
     Variant,
+    parse::{
+        Parse,
+        ParseStream,
+    },
+    punctuated::Punctuated,
+    token::Comma,
 };
 
 pub fn derive(input: &DeriveInput) -> TokenStream {
@@ -68,6 +77,53 @@ impl Default for BizConfig {
     }
 }
 
+// Add parsing structure for bizconfig attributes
+#[derive(Debug)]
+enum BizConfigParam {
+    CodeType(String),
+    AutoStart(i64),
+    AutoIncrement(i64),
+}
+
+impl Parse for BizConfigParam {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let key: Ident = input.parse()?;
+        let _: Token![=] = input.parse()?;
+
+        let key_str = key.to_string();
+        match key_str.as_str() {
+            "code_type" => {
+                let value: LitStr = input.parse()?;
+                Ok(BizConfigParam::CodeType(value.value()))
+            }
+            "auto_start" => {
+                let value: LitInt = input.parse()?;
+                Ok(BizConfigParam::AutoStart(value.base10_parse()?))
+            }
+            "auto_increment" => {
+                let value: LitInt = input.parse()?;
+                Ok(BizConfigParam::AutoIncrement(value.base10_parse()?))
+            }
+            _ => Err(Error::new_spanned(
+                key,
+                format!("Unknown bizconfig parameter: {}", key_str),
+            )),
+        }
+    }
+}
+
+struct BizConfigParams {
+    params: Punctuated<BizConfigParam, Comma>,
+}
+
+impl Parse for BizConfigParams {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(BizConfigParams {
+            params: input.parse_terminated(BizConfigParam::parse, Comma)?,
+        })
+    }
+}
+
 struct VariantInfo {
     name:   Ident,
     code:   VariantCode,
@@ -98,73 +154,20 @@ fn parse_bizconfig_content(
 ) -> Result<()> {
     match &attr.meta {
         Meta::List(meta_list) => {
-            // Parse the content inside #[bizconfig(...)]
-            let content = &meta_list.tokens;
+            // Parse using syn::parse for more robust parsing
+            let params: BizConfigParams =
+                syn::parse2(meta_list.tokens.clone())?;
 
-            // For simplicity, we'll parse manually but handle spaces around =
-            // Expected format: key = "value", key = value
-            let content_str = content.to_string();
-
-            for part in content_str.split(',') {
-                let part = part.trim();
-                if let Some((key, value)) = part.split_once('=') {
-                    let key = key.trim();
-                    let mut value = value.trim();
-
-                    // Remove quotes if present
-                    if value.starts_with('"') && value.ends_with('"') {
-                        value = &value[1..value.len() - 1];
+            for param in params.params {
+                match param {
+                    BizConfigParam::CodeType(value) => {
+                        config.code_type = value;
                     }
-
-                    match key {
-                        "code_type" => {
-                            config.code_type = value.to_string();
-                        }
-                        "auto_start" => {
-                            // Remove all whitespace to handle cases like "-
-                            // 100"
-                            let clean_value: String = value
-                                .chars()
-                                .filter(|c| !c.is_whitespace())
-                                .collect();
-                            config.auto_start =
-                                clean_value.parse().map_err(|_| {
-                                    Error::new_spanned(
-                                        attr,
-                                        format!(
-                                            "auto_start must be a valid \
-                                             integer, got: '{}' (cleaned: \
-                                             '{}')",
-                                            value, clean_value
-                                        ),
-                                    )
-                                })?;
-                        }
-                        "auto_increment" => {
-                            // Remove all whitespace to handle cases like "- 1"
-                            let clean_value: String = value
-                                .chars()
-                                .filter(|c| !c.is_whitespace())
-                                .collect();
-                            config.auto_increment =
-                                clean_value.parse().map_err(|_| {
-                                    Error::new_spanned(
-                                        attr,
-                                        format!(
-                                            "auto_increment must be a valid \
-                                             integer, got: '{}' (cleaned: \
-                                             '{}')",
-                                            value, clean_value
-                                        ),
-                                    )
-                                })?;
-                        }
-                        _ => {
-                            return Err(Error::new_spanned(
-                                attr,
-                                format!("Unknown bizconfig parameter: {}", key),
-                            ));
-                        }
+                    BizConfigParam::AutoStart(value) => {
+                        config.auto_start = value;
+                    }
+                    BizConfigParam::AutoIncrement(value) => {
+                        config.auto_increment = value;
                     }
                 }
             }
@@ -238,7 +241,7 @@ fn generate_biz_error_impl(
     variants: &[VariantInfo],
     config: &BizConfig,
 ) -> TokenStream {
-    let code_type = parse_code_type(&config.code_type);
+    let code_type = config.code_type.parse().unwrap_or_else(|_| quote! { u32 });
 
     let code_arms = variants.iter().map(|v| {
         let variant_name = &v.name;
@@ -321,77 +324,41 @@ fn generate_debug_impl(
 fn generate_code_value(code: &VariantCode, config: &BizConfig) -> TokenStream {
     match code {
         VariantCode::Explicit(tokens) => {
-            // For explicit codes, we need to cast them to the correct type
+            // For explicit codes, use user's literal directly
+            // Let the compiler handle type checking
             if config.code_type == "String" {
                 quote! { (#tokens).to_string() }
-            } else if config.code_type.contains("str") {
-                // For string literals, use them directly
-                tokens.clone()
             } else {
-                // For numeric types, cast the explicit value to the target type
-                match config.code_type.as_str() {
-                    "u8" => quote! { #tokens as u8 },
-                    "u16" => quote! { #tokens as u16 },
-                    "u32" => quote! { #tokens as u32 },
-                    "u64" => quote! { #tokens as u64 },
-                    "u128" => quote! { #tokens as u128 },
-                    "i8" => quote! { #tokens as i8 },
-                    "i16" => quote! { #tokens as i16 },
-                    "i32" => quote! { #tokens as i32 },
-                    "i64" => quote! { #tokens as i64 },
-                    "i128" => quote! { #tokens as i128 },
-                    _ => quote! { #tokens as u32 }, // Default fallback
-                }
+                // Use user's literal directly - they can write 100u8, 100u32,
+                // "AUTH_ERROR", etc.
+                tokens.clone()
             }
         }
         VariantCode::Auto(index) => {
+            // For auto-generated codes, we need to generate the appropriate
+            // literal
             let value =
                 config.auto_start + (*index as i64 * config.auto_increment);
 
-            if config.code_type == "String" {
-                quote! { #value.to_string() }
-            } else if config.code_type.contains("str") {
-                let value_str = value.to_string();
-                quote! { #value_str }
-            } else {
-                // For numeric types, generate the literal value directly
-                match config.code_type.as_str() {
-                    "u8" => quote! { #value as u8 },
-                    "u16" => quote! { #value as u16 },
-                    "u32" => quote! { #value as u32 },
-                    "u64" => quote! { #value as u64 },
-                    "u128" => quote! { #value as u128 },
-                    "i8" => quote! { #value as i8 },
-                    "i16" => quote! { #value as i16 },
-                    "i32" => quote! { #value as i32 },
-                    "i64" => quote! { #value },
-                    "i128" => quote! { #value as i128 },
-                    _ => quote! { #value as u32 }, // Default fallback
+            match config.code_type.as_str() {
+                "String" => quote! { #value.to_string() },
+                t if t.contains("str") => {
+                    let value_str = value.to_string();
+                    quote! { #value_str }
+                }
+                "i64" => quote! { #value }, /* i64 is the native type, no
+                                              * cast needed */
+                _ => {
+                    // For all other numeric types, cast to the target type
+                    // This handles u8, u16, u32, u64, u128, i8, i16, i32, i128,
+                    // etc.
+                    let target_type = config
+                        .code_type
+                        .parse()
+                        .unwrap_or_else(|_| quote! { u32 });
+                    quote! { #value as #target_type }
                 }
             }
-        }
-    }
-}
-
-fn parse_code_type(type_str: &str) -> TokenStream {
-    match type_str {
-        "u8" => quote! { u8 },
-        "u16" => quote! { u16 },
-        "u32" => quote! { u32 },
-        "u64" => quote! { u64 },
-        "u128" => quote! { u128 },
-        "i8" => quote! { i8 },
-        "i16" => quote! { i16 },
-        "i32" => quote! { i32 },
-        "i64" => quote! { i64 },
-        "i128" => quote! { i128 },
-        "String" => quote! { String },
-        "&'static str" => quote! { &'static str },
-        _ => {
-            // For unknown types, assume it's a valid Rust type
-            let ident: TokenStream =
-                type_str.parse().unwrap_or_else(|_| quote! { u32 });
-            ident
         }
     }
 }
