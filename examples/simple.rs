@@ -29,14 +29,14 @@ fn main() {
             println!("Error occurred:");
             println!("  Code: {}", e.code());
             println!("  Name: {}", e.name());
-            println!("  Message: {}", e.msg());
+            println!("  Message: {e}");
             println!("  Display: {e}");
         }
     }
 
     // Test contextual error
     let contextual_result: Result<String, ContextualError<ApiError>> =
-        from_utf8_error().with_biz_context("Processing user input");
+        from_utf8_error().with_context("Processing user input");
 
     match contextual_result {
         Ok(s) => println!("Success: {s}"),
@@ -45,7 +45,12 @@ fn main() {
             println!("  Code: {}", e.code());
             println!("  Name: {}", e.name());
             println!("  Context: {}", e.context());
-            println!("  Location: {}", e.location());
+            println!(
+                "  Location: {}:{}:{}",
+                e.location().file(),
+                e.location().line(),
+                e.location().column()
+            );
         }
     }
 }

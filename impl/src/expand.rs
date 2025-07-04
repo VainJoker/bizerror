@@ -109,42 +109,52 @@ fn parse_bizconfig_content(
                 let part = part.trim();
                 if let Some((key, value)) = part.split_once('=') {
                     let key = key.trim();
-                    let value = value.trim();
+                    let mut value = value.trim();
 
                     // Remove quotes if present
-                    let value =
-                        if value.starts_with('"') && value.ends_with('"') {
-                            &value[1..value.len() - 1]
-                        } else {
-                            value
-                        };
+                    if value.starts_with('"') && value.ends_with('"') {
+                        value = &value[1..value.len() - 1];
+                    }
 
                     match key {
                         "code_type" => {
                             config.code_type = value.to_string();
                         }
                         "auto_start" => {
+                            // Remove all whitespace to handle cases like "-
+                            // 100"
+                            let clean_value: String = value
+                                .chars()
+                                .filter(|c| !c.is_whitespace())
+                                .collect();
                             config.auto_start =
-                                value.parse().map_err(|_| {
+                                clean_value.parse().map_err(|_| {
                                     Error::new_spanned(
                                         attr,
                                         format!(
                                             "auto_start must be a valid \
-                                             integer, got: '{}'",
-                                            value
+                                             integer, got: '{}' (cleaned: \
+                                             '{}')",
+                                            value, clean_value
                                         ),
                                     )
                                 })?;
                         }
                         "auto_increment" => {
+                            // Remove all whitespace to handle cases like "- 1"
+                            let clean_value: String = value
+                                .chars()
+                                .filter(|c| !c.is_whitespace())
+                                .collect();
                             config.auto_increment =
-                                value.parse().map_err(|_| {
+                                clean_value.parse().map_err(|_| {
                                     Error::new_spanned(
                                         attr,
                                         format!(
                                             "auto_increment must be a valid \
-                                             integer, got: '{}'",
-                                            value
+                                             integer, got: '{}' (cleaned: \
+                                             '{}')",
+                                            value, clean_value
                                         ),
                                     )
                                 })?;
@@ -310,7 +320,30 @@ fn generate_debug_impl(
 
 fn generate_code_value(code: &VariantCode, config: &BizConfig) -> TokenStream {
     match code {
-        VariantCode::Explicit(tokens) => tokens.clone(),
+        VariantCode::Explicit(tokens) => {
+            // For explicit codes, we need to cast them to the correct type
+            if config.code_type == "String" {
+                quote! { (#tokens).to_string() }
+            } else if config.code_type.contains("str") {
+                // For string literals, use them directly
+                tokens.clone()
+            } else {
+                // For numeric types, cast the explicit value to the target type
+                match config.code_type.as_str() {
+                    "u8" => quote! { #tokens as u8 },
+                    "u16" => quote! { #tokens as u16 },
+                    "u32" => quote! { #tokens as u32 },
+                    "u64" => quote! { #tokens as u64 },
+                    "u128" => quote! { #tokens as u128 },
+                    "i8" => quote! { #tokens as i8 },
+                    "i16" => quote! { #tokens as i16 },
+                    "i32" => quote! { #tokens as i32 },
+                    "i64" => quote! { #tokens as i64 },
+                    "i128" => quote! { #tokens as i128 },
+                    _ => quote! { #tokens as u32 }, // Default fallback
+                }
+            }
+        }
         VariantCode::Auto(index) => {
             let value =
                 config.auto_start + (*index as i64 * config.auto_increment);

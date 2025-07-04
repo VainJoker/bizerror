@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### ✨ Features
+
+- Implement flexible BizError design with auto-code assignment, configurable code types, and simplified usage through #[bizconfig] attribute. - ([4bb5af1](https://github.com/vainjoker/bizerror/commit/4bb5af1e4fb03fe354ef85f85c51fc660e1e26cb))
+
 ## [0.1.1](https://github.com/vainjoker/bizerror/compare/v0.1.0..v0.1.1) - 2025-07-03
 
 ### ✨ Features

@@ -88,7 +88,7 @@ fn main() {
     for error in &simple_errors {
         println!(
             "  {} -> Code: {}, Name: {}",
-            error.msg(),
+            error,
             error.code(),
             error.name()
         );
@@ -109,7 +109,7 @@ fn main() {
     for error in &api_errors {
         println!(
             "  {} -> Code: {}, Name: {}",
-            error.msg(),
+            error,
             error.code(),
             error.name()
         );
@@ -129,7 +129,7 @@ fn main() {
     for error in &string_errors {
         println!(
             "  {} -> Code: \"{}\", Name: {}",
-            error.msg(),
+            error,
             error.code(),
             error.name()
         );
@@ -148,7 +148,7 @@ fn main() {
     for error in &duplicate_errors {
         println!(
             "  {} -> Code: {}, Name: {}",
-            error.msg(),
+            error,
             error.code(),
             error.name()
         );
@@ -179,12 +179,12 @@ fn main() {
     println!("------------------------------");
     let result: Result<String, SimpleError> = Err(SimpleError::TimeoutError);
     let contextual_result: Result<String, ContextualError<SimpleError>> =
-        result.with_biz_context("Processing user request");
+        result.with_context("Processing user request");
 
     match contextual_result {
         Ok(_) => println!("  Success"),
         Err(e) => {
-            println!("  Error: {}", e.msg());
+            println!("  Error: {e}");
             println!("  Context: {}", e.context());
         }
     }

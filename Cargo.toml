@@ -9,12 +9,19 @@ exclude = [".github", "CHANGELOG.md"]
 repository = "https://github.com/vainjoker/bizerror"
 homepage = "https://github.com/vainjoker/bizerror"
 description = "Provides a standardized approach for defining and managing business-related errors"
+keywords = ["error", "business", "bizerror", "error-handling"]
+categories = ["development-tools", "rust-patterns"]
 
 [dependencies]
 bizerror-impl = { version = "0.1", path = "impl" }
 
 [dev-dependencies] 
 thiserror = "2"
+criterion = { version = "0.6", features = ["html_reports"] }
+
+[[bench]]
+name = "error_performance"
+harness = false
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -50,3 +57,8 @@ use_self = "warn"
 
 [profile.release]
 strip = true
+
+[features]
+default = []
+# Enable std features for compatibility
+std = []
